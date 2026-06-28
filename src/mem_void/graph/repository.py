@@ -151,6 +151,31 @@ def create_fact(client: Neo4jClient, fact: Fact) -> None:
         )
 
 
+def close_active_facts(
+    client: Neo4jClient,
+    subject: str,
+    predicate: str,
+    closed_at: object,
+) -> None:
+    """Close all currently active facts for a (subject, predicate) pair.
+
+    Sets valid_to = closed_at on every matching relationship
+    where valid_to IS NULL. Used by FactResolver for exclusive predicates.
+    """
+    Fact.validate_predicate(predicate)
+
+    with client.session() as session:
+        session.run(
+            f"""
+            MATCH (s:Entity {{name: $subject}})-[r:{predicate}]->(:Entity)
+            WHERE r.valid_to IS NULL
+            SET r.valid_to = $closed_at
+            """,
+            subject=subject,
+            closed_at=closed_at,
+        )
+
+
 def current_facts(
     client: Neo4jClient,
     entity_name: str,
