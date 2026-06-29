@@ -28,3 +28,7 @@ Thumbs.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Project docs (local only)
+planning/
+deepseek/
