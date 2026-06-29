@@ -29,7 +29,7 @@ print("\n--- current_facts('Alice') ---")
 from mem_void.retrieval import current_facts
 facts = current_facts(memory._client, "Alice")
 for f in facts:
-    print(f"  {f.predicate} → {f.object} (since {f.valid_from.strftime('%Y-%m')})")
+    print(f"  {f.predicate} -> {f.object} (since {f.valid_from.strftime('%Y-%m')})")
 
 print("\n--- fact_history('Alice', predicate='WORKS_AT') ---")
 from mem_void.retrieval import fact_history
