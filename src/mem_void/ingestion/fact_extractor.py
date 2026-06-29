@@ -17,17 +17,23 @@ class ExtractedTriple(BaseModel):
 _triple_list_adapter = TypeAdapter(list[ExtractedTriple])
 
 _FACT_PROMPT = """\
-Extract relationship triples from the text below.
-Use ONLY the entity names listed. Return ONLY a JSON array.
-Each object must have:
-  - "subject" (string): entity name from the list
-  - "predicate" (string): UPPER_SNAKE_CASE (e.g. WORKS_AT, WORKS_ON, LIVES_IN)
-  - "object" (string): entity name from the list
+Extract relationship triples from the text. Return ONLY a JSON array.
+
+RULES:
+1. Use entity names EXACTLY as provided — do not modify or expand them.
+2. Choose a SPECIFIC predicate from this list (match the meaning):
+   - "WORKS_AT" — employment, joining a company, working for an org
+   - "WORKS_ON" — project assignment, working on an initiative
+   - "LIVES_IN" — residing in a location
+   - "KNOWS" — knowing a person
+   - "LOCATED_IN" — physical location of an office/entity
+3. NEVER use generic predicates like "RELATES_TO" or "IS".
+4. Predicate must be UPPER_SNAKE_CASE.
 
 Entities: {entities}
 Text: "{text}"
 
-Output:"""
+JSON output:"""
 
 
 def extract_facts(
@@ -45,8 +51,21 @@ def extract_facts(
 
 
 def _parse_fact_response(raw: str) -> list[ExtractedTriple]:
+    raw = _strip_markdown_fences(raw)
     try:
         data = json.loads(raw)
         return _triple_list_adapter.validate_python(data)
     except (json.JSONDecodeError, ValueError):
         return []
+
+
+def _strip_markdown_fences(raw: str) -> str:
+    text = raw.strip()
+    if text.startswith("```"):
+        lines = text.split("\n")
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        text = "\n".join(lines)
+    return text.strip()

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime
-from uuid import UUID
+from datetime import datetime, timezone
+from uuid import UUID, uuid4
 
 from mem_void.graph.client import Neo4jClient
 from mem_void.models.entity import Entity
@@ -253,15 +253,15 @@ def _predicate_match_clause(predicate: str) -> str:
 
 def _record_to_fact(data: dict) -> Fact:
     return Fact(
-        uuid=UUID(data["uuid"]),
-        subject=data["subject"],
-        predicate=data["predicate"],
-        object=data["object"],
-        valid_from=_to_datetime(data["valid_from"]),
-        valid_to=_to_datetime(data["valid_to"]) if data.get("valid_to") else None,
+        uuid=UUID(data["uuid"]) if data.get("uuid") else uuid4(),
+        subject=data.get("subject", ""),
+        predicate=data.get("predicate", ""),
+        object=data.get("object", ""),
+        valid_from=_to_datetime(data.get("valid_from")),
+        valid_to=_to_datetime(data.get("valid_to")) if data.get("valid_to") else None,
         episode_uuid=UUID(data["episode_uuid"]) if data.get("episode_uuid") else None,
         confidence=data.get("confidence"),
-        created_at=_to_datetime(data["created_at"]),
+        created_at=_to_datetime(data.get("created_at")),
     )
 
 
@@ -269,4 +269,6 @@ def _to_datetime(value: object) -> datetime:
     """Convert a Neo4j DateTime or Python datetime to datetime."""
     if isinstance(value, datetime):
         return value
+    if value is None:
+        return datetime.now(timezone.utc)
     return datetime.fromisoformat(str(value))
